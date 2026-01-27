@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ASCII LABS
+
+A web app that converts images, GIFs, and videos into ASCII art and retro visual effects. Built with Next.js, TypeScript, and the HTML Canvas API.
+
+## Features
+
+- **9 Visual Effects** — ASCII Art, Floyd-Steinberg Dither, Atkinson Dither, Ordered Dither, Matrix Rain, Edge Detection, Halftone, Pixel Art, Scanlines
+- **Real-time Preview** — See changes instantly as you adjust settings
+- **ASCII Art Engine** — 11 character sets (Standard, Blocks, Binary, Detailed, Minimal, Alphabetic, Numeric, Math, Symbols, Braille, Matrix) with adjustable scale, spacing, and output width
+- **Image Adjustments** — Brightness, contrast, saturation, hue rotation, sharpness, gamma
+- **Animated Input** — Supports GIF and MP4 with frame-by-frame effect processing
+- **Export** — Download as PNG, JPEG, or plain text (ASCII mode)
+- **Mint as NFT** — Mint your creations as Solana NFTs directly from the app (Phantom & Solflare wallets supported, IPFS via Pinata)
+
+## Supported Formats
+
+| Input | Formats |
+|-------|---------|
+| Image | JPG, PNG, WebP, BMP |
+| Animated | GIF |
+| Video | MP4 |
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- npm or yarn
+
+### Installation
+
+```bash
+git clone https://github.com/0toBillions/asciilabs.git
+cd asciilabs
+npm install
+```
+
+### Environment Variables
+
+Create a `.env.local` file in the root directory:
+
+```
+PINATA_JWT=your_pinata_jwt_here
+NEXT_PUBLIC_PINATA_GATEWAY=your_gateway_here
+```
+
+These are only required for the NFT minting feature. The app works without them for all other functionality.
+
+### Run
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Tech Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Next.js 16** (App Router)
+- **TypeScript**
+- **Tailwind CSS**
+- **HTML Canvas API** — All image processing runs client-side
+- **Solana Web3.js + Metaplex** — NFT minting
+- **Pinata** — IPFS storage for NFT assets
 
-## Learn More
+## License
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
