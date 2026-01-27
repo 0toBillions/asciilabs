@@ -21,7 +21,7 @@ export default function ExportPanel({ canvasRef, asciiText, effect }: ExportPane
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `grainrad-ascii.txt`;
+      a.download = `asciilabs-ascii.txt`;
       a.click();
       URL.revokeObjectURL(url);
       return;
@@ -42,7 +42,7 @@ export default function ExportPanel({ canvasRef, asciiText, effect }: ExportPane
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `grainrad-${effect}.${format}`;
+      a.download = `asciilabs-${effect}.${format}`;
       a.click();
       URL.revokeObjectURL(url);
     }, mime);

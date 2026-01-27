@@ -47,7 +47,7 @@ export default function MintNFT({ canvasRef, effectName }: MintNFTProps) {
         }, "image/png");
       });
 
-      const imageFile = new File([blob], "grainrad-nft.png", { type: "image/png" });
+      const imageFile = new File([blob], "asciilabs-nft.png", { type: "image/png" });
 
       // 2. Upload image to Pinata via API route
       const imageForm = new FormData();
@@ -66,7 +66,7 @@ export default function MintNFT({ canvasRef, effectName }: MintNFTProps) {
 
       const metadata = {
         name: nftName,
-        symbol: "GRAD",
+        symbol: "ALAB",
         description: `Created with ASCII LABS using ${effectName} effect`,
         image: imageUrl,
         attributes: [
@@ -101,7 +101,7 @@ export default function MintNFT({ canvasRef, effectName }: MintNFTProps) {
       await createNft(umi, {
         mint,
         name: nftName,
-        symbol: "GRAD",
+        symbol: "ALAB",
         uri: metadataUrl,
         sellerFeeBasisPoints: percentAmount(0),
         isMutable: true,
