@@ -35,17 +35,16 @@ interface TreeConfig {
 }
 
 function selectTreeConfig(quantity: number): TreeConfig {
+  // Only valid maxDepth/maxBufferSize pairs supported by the on-chain program
   if (quantity <= 8) return { maxDepth: 3, maxBufferSize: 8, capacity: 8 };
-  if (quantity <= 128) return { maxDepth: 7, maxBufferSize: 64, capacity: 128 };
-  if (quantity <= 1024) return { maxDepth: 10, maxBufferSize: 256, capacity: 1024 };
-  return { maxDepth: 14, maxBufferSize: 512, capacity: 16384 };
+  if (quantity <= 16384) return { maxDepth: 14, maxBufferSize: 64, capacity: 16384 };
+  return { maxDepth: 20, maxBufferSize: 64, capacity: 1048576 };
 }
 
 const TREE_COST_ESTIMATES: Record<number, string> = {
   3: "~0.003 SOL",
-  7: "~0.03 SOL",
-  10: "~0.15 SOL",
-  14: "~1.2 SOL",
+  14: "~0.15 SOL",
+  20: "~1.5 SOL",
 };
 
 export default function MintNFT({ canvasRef, effectName }: MintNFTProps) {
@@ -142,21 +141,23 @@ export default function MintNFT({ canvasRef, effectName }: MintNFTProps) {
       }
       const { url: metadataUrl } = await metaRes.json();
 
-      // 4. Mint cNFTs in batches (multiple mints per transaction)
+      // 4. Batch mint cNFTs — pack multiple mints per tx, sign all at once (single wallet approval)
       setStep("minting");
 
-      const BATCH_SIZE = 5;
-      for (let i = 0; i < quantity; i += BATCH_SIZE) {
-        const batchEnd = Math.min(i + BATCH_SIZE, quantity);
+      const MINTS_PER_TX = 5;
+      const builders = [];
+
+      for (let batchStart = 0; batchStart < quantity; batchStart += MINTS_PER_TX) {
+        const batchEnd = Math.min(batchStart + MINTS_PER_TX, quantity);
         let builder = transactionBuilder();
 
-        for (let j = i; j < batchEnd; j++) {
+        for (let i = batchStart; i < batchEnd; i++) {
           builder = builder.add(
             mintV1(umi, {
               leafOwner: umi.identity.publicKey,
               merkleTree: merkleTree.publicKey,
               metadata: {
-                name: quantity === 1 ? nftName : `${nftName} #${j + 1}`,
+                name: quantity === 1 ? nftName : `${nftName} #${i + 1}`,
                 uri: metadataUrl,
                 sellerFeeBasisPoints: 0,
                 collection: none(),
@@ -168,14 +169,34 @@ export default function MintNFT({ canvasRef, effectName }: MintNFTProps) {
           );
         }
 
-        await builder.sendAndConfirm(umi);
-        setMintProgress(batchEnd);
-
-        // Small delay between batches to avoid rate limiting
-        if (batchEnd < quantity) {
-          await new Promise((r) => setTimeout(r, 500));
-        }
+        builders.push({ builder, count: batchEnd });
       }
+
+      // Build all unsigned transactions with a fresh blockhash
+      const blockhash = await umi.rpc.getLatestBlockhash();
+      const unsignedTxs = await Promise.all(
+        builders.map((b) =>
+          b.builder.setBlockhash(blockhash).build(umi)
+        )
+      );
+
+      // Sign all at once — single wallet approval popup
+      const signedTxs = await umi.identity.signAllTransactions(unsignedTxs);
+
+      // Send all signed transactions quickly (don't wait for confirmation between sends)
+      const signatures = [];
+      for (let i = 0; i < signedTxs.length; i++) {
+        const sig = await umi.rpc.sendTransaction(signedTxs[i], {
+          skipPreflight: true,
+        });
+        signatures.push(sig);
+        setMintProgress(builders[i].count);
+      }
+
+      // Confirm the last transaction to ensure all landed
+      await umi.rpc.confirmTransaction(signatures[signatures.length - 1], {
+        strategy: { type: "blockhash", ...blockhash },
+      });
 
       setStep("done");
     } catch (err: unknown) {
