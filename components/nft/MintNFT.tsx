@@ -12,7 +12,7 @@ import {
   mplBubblegum,
 } from "@metaplex-foundation/mpl-bubblegum";
 import { walletAdapterIdentity } from "@metaplex-foundation/umi-signer-wallet-adapters";
-import { generateSigner, none, publicKey as toPublicKey } from "@metaplex-foundation/umi";
+import { generateSigner, none, publicKey as toPublicKey, transactionBuilder } from "@metaplex-foundation/umi";
 
 interface MintNFTProps {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -142,25 +142,39 @@ export default function MintNFT({ canvasRef, effectName }: MintNFTProps) {
       }
       const { url: metadataUrl } = await metaRes.json();
 
-      // 4. Mint cNFTs
+      // 4. Mint cNFTs in batches (multiple mints per transaction)
       setStep("minting");
 
-      for (let i = 0; i < quantity; i++) {
-        await mintV1(umi, {
-          leafOwner: umi.identity.publicKey,
-          merkleTree: merkleTree.publicKey,
-          metadata: {
-            name: quantity === 1 ? nftName : `${nftName} #${i + 1}`,
-            uri: metadataUrl,
-            sellerFeeBasisPoints: 0,
-            collection: none(),
-            creators: [
-              { address: umi.identity.publicKey, verified: false, share: 100 },
-            ],
-          },
-        }).sendAndConfirm(umi);
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < quantity; i += BATCH_SIZE) {
+        const batchEnd = Math.min(i + BATCH_SIZE, quantity);
+        let builder = transactionBuilder();
 
-        setMintProgress(i + 1);
+        for (let j = i; j < batchEnd; j++) {
+          builder = builder.add(
+            mintV1(umi, {
+              leafOwner: umi.identity.publicKey,
+              merkleTree: merkleTree.publicKey,
+              metadata: {
+                name: quantity === 1 ? nftName : `${nftName} #${j + 1}`,
+                uri: metadataUrl,
+                sellerFeeBasisPoints: 0,
+                collection: none(),
+                creators: [
+                  { address: umi.identity.publicKey, verified: false, share: 100 },
+                ],
+              },
+            })
+          );
+        }
+
+        await builder.sendAndConfirm(umi);
+        setMintProgress(batchEnd);
+
+        // Small delay between batches to avoid rate limiting
+        if (batchEnd < quantity) {
+          await new Promise((r) => setTimeout(r, 500));
+        }
       }
 
       setStep("done");
